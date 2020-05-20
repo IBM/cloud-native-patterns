@@ -1,0 +1,8 @@
+apiVersion: cnp.ibm.com/v1
+kind: Job
+metadata:
+  name: example
+spec:
+  desired: 1
+  image: busybox
+  args: ['sh', '-c', 'echo "Hello, Kubernetes!" && sleep 3600']
