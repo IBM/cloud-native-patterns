@@ -15,7 +15,13 @@
  */
 package com.ibm.cnp.samples;
 
+import com.ibm.cnp.samples.job.JobConductor;
+import com.ibm.cnp.samples.job.JobController;
+import com.ibm.cnp.samples.job.JobCoordinator;
+import com.ibm.cnp.samples.job.JobFactory;
+import com.ibm.cnp.samples.job.JobStore;
 import com.ibm.cnp.samples.pod.PodController;
+import com.ibm.cnp.samples.pod.PodFactory;
 import com.ibm.cnp.samples.pod.PodStore;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -80,20 +86,42 @@ public class Main {
                 logger.setLevel(Level.toLevel(logLevel));
             }
             /*
-             * Create the controllers.
+             * Create the pod controller.
              */
             var podStore = new PodStore();
+            var podFactory = new PodFactory(client, podStore);
             var podController = new PodController(client, podStore, ns);
+            /*
+             * Create the job controller.
+             */
+            var jobStore = new JobStore();
+            var jobFactory = new JobFactory(client);
+            var jobController = new JobController(client, jobStore, jobFactory, podStore, podFactory, ns);
+            /*
+             * Create the job coordinator.
+             */
+            var jobCoordinator = new JobCoordinator(jobStore, jobFactory);
+            jobController.addListener(jobCoordinator);
+            /*
+             * Create the job conductor.
+             */
+            var jobConductor = new JobConductor(jobStore, jobCoordinator, podStore);
+            jobController.addGenericListener(jobConductor);
+            podController.addGenericListener(jobConductor);
             /*
              * Start the Job FSM and the controllers
              */
             lock.lock();
             podController.start();
+            jobController.start();
+            jobConductor.start();
             terminated.await();
             lock.unlock();
             /*
              * Close the controllers upon termination.
              */
+            jobConductor.close();
+            jobController.close();
             podController.close();
         } catch (IOException | KubernetesClientException | InterruptedException e) {
             e.printStackTrace();

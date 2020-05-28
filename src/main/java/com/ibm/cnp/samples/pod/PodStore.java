@@ -15,10 +15,25 @@
  */
 package com.ibm.cnp.samples.pod;
 
+import com.ibm.cnp.samples.job.Job;
 import io.fabric8.kubernetes.api.model.Pod;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static com.ibm.cnp.samples.ICustomResourceCommons.CNP_JOB_LABEL_KEY;
 
 public class PodStore extends ConcurrentHashMap<Object, Pod> {
+
+    public List<Pod> getPodsForJob(Job job) {
+        return values().stream()
+                       .filter(j -> j.getMetadata()
+                                     .getLabels()
+                                     .get(CNP_JOB_LABEL_KEY)
+                                     .equals(job.getMetadata().getName()))
+                       .collect(Collectors.toList());
+
+    }
 
 }
