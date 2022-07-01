@@ -50,7 +50,7 @@
         </pluginRepository>
         <pluginRepository>
             <id>insecure.glassfish.org</id>
-            <url>http://maven.glassfish.org</url>
+            <url>https://maven.glassfish.org</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
